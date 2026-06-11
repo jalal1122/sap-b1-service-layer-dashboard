@@ -1,0 +1,95 @@
+Smart choice, habibi! Letting your code assistant handle the line-by-line coding while you drive the architecture is the fastest way to hit that June 14 deadline. To get clean, enterprise-grade results, you just need to feed it a precise structural blueprint.
+
+Here is the complete architectural master setup plan for your **SAP Business One Service Layer Portal**.
+
+---
+
+## 1. Project Directory Tree
+
+This is the standard Next.js App Router layout you need to initialize. It cleanly separates your mock data layer, your API routing, and your frontend interfaces.
+
+```text
+sap-b1-reporting-portal/
+├── app/
+│   ├── layout.tsx             # Global fonts, Tailwind, and theme layout
+│   ├── page.tsx               # Entry page (Redirects to Login or Dashboard)
+│   ├── login/
+│   │   └── page.tsx           # SAP credentials validation screen
+│   ├── dashboard/
+│   │   └── page.tsx           # Executive analytics & multi-table aggregates
+│   ├── inventory/
+│   │   └── page.tsx           # OITM inventory tracking & warehouse alerts
+│   └── api/
+│       └── sap/
+│           └── [...mock]/
+│               └── route.ts   # The Master Catch-All Service Layer Simulation
+├── lib/
+│   └── sapClient.ts           # Fetch wrappers with explicit OData URL building
+├── constants/
+│   └── mockTables.ts          # Seed data modeled on OITM, OCRD, and ORDR
+├── package.json
+└── tailwind.config.js
+
+```
+
+---
+
+## 2. File-by-File Specification Sheet
+
+Use this breakdown to tell your AI assistant exactly what needs to be written inside each file conceptually.
+
+### `constants/mockTables.ts` (The Database Schema)
+
+* **What it contains:** Static arrays representing standard relational SAP B1 data structures.
+* **Fields to include:**
+* **Customer Master (`OCRD`):** Arrays with `CardCode`, `CardName`, `CardType` ('C' or 'V'), and current `Balance`.
+* **Item Master (`OITM`):** Arrays with `ItemCode`, `ItemName`, `OnHand` (Stock level), `IsCommited`, and `Price`.
+* **Sales Orders (`ORDR` & `RDR1`):** A nested object relational array where headers hold `DocEntry`, `DocNum`, `CardCode`, and lines hold sub-arrays of `LineNum`, `ItemCode`, `Quantity`, and `Price`.
+
+
+
+### `app/api/sap/[...mock]/route.ts` (The API Engine)
+
+* **What it contains:** Dynamic HTTP request routing using Next.js runtime edge/node handlers.
+* **Logic to implement:**
+* **POST Requests:** Intercept `/Login` to read standard corporate username/password objects and pass back a mock `B1SESSION` cookie. Intercept `/Orders` to simulate mutating data by pushing objects into your mock sales array.
+* **GET Requests:** Intercept `/BusinessPartners`, `/Items`, and `/Orders`. Include a string parser that scans the URL for OData components like `$filter` or `$select`. If it catches a string like `DocumentStatus eq 'bost_Open'`, it filters the array before returning the JSON response.
+
+
+
+### `lib/sapClient.ts` (The API Fetch Utility)
+
+* **What it contains:** Clean asynchronous JavaScript execution logic to handle talking to the API layer securely.
+* **Logic to implement:**
+* A login function that handles sending payload data to the local route handler.
+* A flexible fetching function that automatically handles extracting dynamic URLs and appending the needed authentication header headers.
+
+
+
+### `app/dashboard/page.tsx` (The Executive View)
+
+* **What it contains:** High-end Tailwind components for visual presentation.
+* **Components to include:**
+* KPI grid cards pulling real-time aggregate data from your simulated orders (e.g., calculation of total pending order value).
+* A summary table tracking business partner transaction frequencies.
+
+
+
+### `app/inventory/page.tsx` (Warehouse Optimization View)
+
+* **What it contains:** An interface designed to prove your understanding of resource and inventory pipelines.
+* **Components to include:**
+* A structured data table that monitors active `OnHand` properties.
+* A logic check that changes row colors to bright red if the stock numbers drop below a critical threshold value, matching real industrial supply chain demands.
+
+
+
+---
+
+## 3. The Perfect Blueprint Prompt for Your Code Generator
+
+When you copy the file tree and structure over to your tool, paste this specific instruction prompt alongside it:
+
+> *"Act as an Expert Enterprise Solutions Architect specializing in SAP Business One integrations and Next.js App Router architectures. Build out the complete code implementations for the file tree provided above. Ensure all tables follow standard SAP acronym naming conventions (OITM, OCRD, ORDR, RDR1). Focus heavily on utilizing strict TypeScript typings for enterprise payloads, handle mock authentication strictly via HttpOnly session cookies, and implement clean UI screens using Tailwind CSS that emphasize scannable data visualization grids suitable for industrial monitoring roles."*
+
+This precise map keeps your development fast, clean, and perfectly aligned for your upcoming application submission.

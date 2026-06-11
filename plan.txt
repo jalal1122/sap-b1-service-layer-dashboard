@@ -1,0 +1,330 @@
+# SAP B1 Service Layer Reporting Portal — Implementation Plan (v4 — Final)
+
+> [!NOTE]
+> **v4 update:** Final gap-fill complete. Added `next.config.ts`, `app/globals.css`, `lib/auth.ts`, `.env.local.example`, `tsconfig.json` strict config, App Router `loading.tsx`/`error.tsx`/`not-found.tsx` conventions, git initialization step, and CSRF security note on the Login endpoint. All 5 Stitch screen mockups embedded. Use **npm**.
+
+---
+
+## Stitch Screen References
+
+The following screens from the Stitch project (ID: `3203468844305042933`) define the visual target for each phase:
+
+````carousel
+![Reporting Portal Shell](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\shell.webp)
+<!-- slide -->
+![Service Layer Gateway Login](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\login.webp)
+<!-- slide -->
+![Executive Analytics Dashboard](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\dashboard.webp)
+<!-- slide -->
+![Business Partner Directory](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\partners.webp)
+<!-- slide -->
+![Supply Chain Inventory Watchdog](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\inventory.webp)
+````
+
+---
+
+## Global Design System Rules (Applied to ALL phases)
+
+> [!IMPORTANT]
+> These rules are non-negotiable and must be enforced in every component.
+
+- **Theme:** "Industrial Dark" — never use pure `#000000`
+- **Backgrounds:** `bg-slate-950` for body, `bg-slate-900` for cards/panels
+- **Borders:** 1px solid `border-slate-800` — no heavy shadows, rely on border definitions
+- **Accent:** "SAP Blue" → `text-blue-500` / `bg-blue-600` for primary actions and active states
+- **Typography:** `Inter` for all UI text; `font-mono` (JetBrains Mono) strictly for financial figures, inventory quantities, document numbers, and ID fields
+- **Spacing:** `p-6` for card interiors; `gap-4` / `gap-6` for grid layouts — mathematically consistent throughout
+- **Custom Tokens (tailwind.config.ts):** `--sap-blue`, `--alert-red`, `--stock-green`
+
+---
+
+## Phase 1: Project Foundation, Design System & Global Shell
+
+**Branch:** `feature/init-project`
+
+**Visual Target:** [Reporting Portal Shell](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\shell.webp)
+
+**Stitch Prompt Used:**
+> Role: Expert Frontend Architect specializing in Next.js 16 (App Router), Tailwind CSS, and Shadcn UI.
+> Task: Initialize the global design system and persistent navigation shell for an "SAP B1 Service Layer Reporting Portal".
+
+**Commits:**
+- `chore: git init with .gitignore for Next.js and node_modules`
+- `chore: bootstrap Next.js 16 app router with TypeScript and npm`
+- `chore: configure tsconfig.json for strict TypeScript mode`
+- `chore: configure Tailwind with dark industrial theme tokens and Google Fonts`
+- `chore: install and configure Shadcn UI component library`
+- `feat: build shared navigation sidebar component`
+- `feat: add App Router loading, error, and not-found fallback pages`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `.gitignore` | **NEW** | Standard Next.js gitignore (node_modules, .next, .env.local) |
+| `package.json` | MODIFY | Add `recharts`, `lucide-react`, Shadcn deps |
+| `tsconfig.json` | MODIFY | Enable `strict: true`, `noImplicitAny: true`, `strictNullChecks: true` |
+| `next.config.ts` | **NEW** | Configure Next.js: `images.remotePatterns` if needed; font optimization settings |
+| `tailwind.config.ts` | MODIFY | Add `--sap-blue`, `--alert-red`, `--stock-green` tokens; Inter + JetBrains Mono fonts |
+| `app/globals.css` | MODIFY | Tailwind `@tailwind base/components/utilities` directives; Google Font `@import` for Inter and JetBrains Mono |
+| `app/layout.tsx` | MODIFY | Wrap app in dark theme body (`bg-slate-950`), apply Inter font class |
+| `app/page.tsx` | MODIFY | Root redirect: B1SESSION cookie → `/dashboard`, else → `/login` |
+| `app/not-found.tsx` | **NEW** | Branded 404 page in Industrial Dark theme |
+| `app/error.tsx` | **NEW** | Global App Router error boundary (client component) |
+| `app/loading.tsx` | **NEW** | Global skeleton loading state |
+| `components/layout/sidebar.tsx` | **NEW** | Vertical fixed sidebar; logo area "FF Steel IT Portal"; icons: `LayoutDashboard`, `Users`, `Boxes`, `LogOut`; active route = SAP Blue accent + subtle glow |
+| `components/layout/protected-layout.tsx` | **NEW** | Sidebar left + scrollable `<main>` right with `pt-8 px-8` |
+
+---
+
+## Phase 2: TypeScript Types & Mock Database (`OCRD`, `OITM`, `ORDR`, `RDR1`)
+
+**Branch:** `feature/mock-database`
+
+**Commits:**
+- `feat: define strict TypeScript interfaces for SAP B1 payload types`
+- `feat: seed mock data for OCRD, OITM, ORDR and RDR1 tables`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `types/sap.ts` | **NEW** | Interfaces: `OCRD` (CardCode, CardName, CardType, Balance, CreditLimit); `OITM` (ItemCode, ItemName, OnHand, IsCommited, Price, MinStock); `ORDR` (DocEntry, DocNum, CardCode, DocDate, DocumentStatus, Lines); **`RDR1Line`** (LineNum, ItemCode, Quantity, Price — as specified in MasterDoc); `B1SessionPayload`; `ODataResponse<T>` |
+| `constants/mockTables.ts` | **NEW** | Seed arrays — `OCRD` (CardCode, CardName, CardType `'C'`/`'V'`, Balance, CreditLimit); `OITM` (ItemCode, ItemName, OnHand, IsCommited, Price, MinStock); `ORDR` (DocEntry, DocNum, CardCode, DocDate, DocumentStatus `'bost_Open'`/`'bost_Close'`, Lines with nested `RDR1Line[]`) |
+| `.env.local.example` | **NEW** | Template env file: `SAP_MOCK_USER`, `SAP_MOCK_PASSWORD`, `SAP_MOCK_COMPANY_DB`, `SESSION_SECRET` — never commit real values |
+
+---
+
+## Phase 3: Native OData Query Parsing Utility
+
+**Branch:** `feature/odata-parser`
+
+**Commits:**
+- `feat: implement OData $select, $filter, and $orderby query parser`
+- `test: verify parser against DocumentStatus eq 'bost_Open' filter string`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `lib/odata-parser.ts` | **NEW** | `parseSelect()` → strips unrequested columns; `parseFilter()` → evaluates `eq`, `gt`, `lt`; `parseOrderby()` → sorts by field and direction; `applyODataQuery()` → orchestrator |
+
+---
+
+## Phase 4: Service Layer API Engine (Catch-All Route Handler)
+
+**Branch:** `feature/api-engine`
+
+**Commits:**
+- `feat: create catch-all SAP Service Layer route handler`
+- `feat: add GET handlers for BusinessPartners, Items, Orders with OData`
+- `feat: add POST /Orders mutation handler`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `app/api/sap/[...mock]/route.ts` | **NEW** | `GET /BusinessPartners` → OCRD; `GET /Items` → OITM; `GET /Orders` → ORDR with OData; `POST /Orders` → push + return 201 |
+
+---
+
+## Phase 5: Authentication & Session Management (`B1SESSION`)
+
+**Branch:** `feature/auth-session`
+
+**Visual Target:** [Service Layer Gateway Login](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\login.webp)
+
+**Stitch Prompt Used:**
+> Role: Expert Frontend Architect.
+> Task: Build the `/login` page for the SAP B1 Service Layer Portal.
+> - Card perfectly centered vertically and horizontally
+> - Enterprise software gateway look: `rounded-md`, no pill-shaped buttons
+> - Inputs: `bg-slate-900`, `border-slate-800`, focus ring = SAP Blue
+> - Header: "SAP Business One | Service Layer Gateway"
+> - Fields: Company DB (mono font, default `SBODemoUS`), Username, Password
+> - Button: full-width, solid SAP Blue, label "Authenticate Session"
+> - Footer: "Authorized Personnel Only. Session protected by HttpOnly cookies."
+
+**Commits:**
+- `feat: add POST /api/sap/Login endpoint with B1SESSION HttpOnly cookie`
+- `feat: add POST /api/sap/Logout endpoint to clear B1SESSION cookie`
+- `feat: add Next.js middleware to guard all protected routes`
+- `feat: build login page UI with SAP credential form`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `app/api/sap/Login/route.ts` | **NEW** | Reads `SAP_MOCK_USER`/`SAP_MOCK_PASSWORD` from `.env.local`; sets `B1SESSION` cookie (`HttpOnly`, `Secure`, `SameSite=Strict` — SameSite acts as CSRF defense for this session cookie pattern) |
+| `app/api/sap/Logout/route.ts` | **NEW** | Clears `B1SESSION` cookie by setting `Max-Age=0`; redirects to `/login` |
+| `middleware.ts` | **NEW** | Guards `/dashboard/*`, `/business-partners/*`, `/inventory/*`; reads `B1SESSION` cookie with `request.cookies.get()`; redirects to `/login` if absent |
+| `app/login/page.tsx` | **NEW** | Login form matching Stitch design — client component (`'use client'`) for form state |
+| `lib/auth.ts` | **NEW** | Server-side auth helper: `getSession(cookies)` reads and validates `B1SESSION` from Next.js cookies; used by all protected server components to verify session before fetching data |
+| `lib/sapClient.ts` | **NEW** | `login()`, `logout()`, `sapFetch()` OData URL builder with session headers |
+
+---
+
+## Phase 6: Executive Analytics Dashboard (`ORDR` & `OCRD`)
+
+**Branch:** `feature/executive-dashboard`
+
+**Visual Target:** [Executive Analytics Dashboard](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\dashboard.webp)
+
+**Stitch Prompt Used:**
+> Role: Expert Frontend Architect specializing in data visualization.
+> Task: Build `/dashboard` displaying executive analytics (`ORDR` and `OCRD` aggregates).
+> - 12-column grid; KPI cards = 3 columns each on desktop
+> - All numbers/currency MUST use `font-mono`
+> - Recharts dark theme: no default grid lines (or `stroke-slate-800`); tooltips `bg-slate-900 border-slate-800`
+> - Revenue BarChart: SAP Blue bars with `opacity-80` hover
+> - Page header: "Executive Analytics"
+
+**Commits:**
+- `feat: build KPI cards for total revenue, open orders, and closed invoices`
+- `feat: add open vs finalized order ratio KPI card for auditor view`
+- `feat: build recharts revenue pipeline chart grouped by CardCode`
+- `feat: build top-distributor leaderboard table`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `app/dashboard/page.tsx` | **NEW** | Server component; page header "Executive Analytics" |
+| `components/dashboard/kpi-cards.tsx` | **NEW** | 4 cards: Total Pending Value (currency), Total Revenue (currency), Open vs Finalized ratio, Active Partners count |
+| `components/dashboard/revenue-chart.tsx` | **NEW** | `recharts` BarChart — top 5 distributors by revenue; SAP Blue bars |
+| `components/dashboard/partner-leaderboard.tsx` | **NEW** | Top 5 spenders table; cols: Rank, CardCode (mono), Name, Revenue (mono) |
+
+---
+
+## Phase 7: Business Partner Directory (`OCRD`)
+
+**Branch:** `feature/business-partners`
+
+**Visual Target:** [Business Partner Directory](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\partners.webp)
+
+**Stitch Prompt Used:**
+> Role: Expert Frontend Architect.
+> Task: Build `/business-partners` directory page for tracking `OCRD` master data.
+> - High-end data grid UI; sticky headers with `bg-slate-900`
+> - Filter chips: "All", "Customers (C)", "Vendors (V)" — active chip = `bg-slate-800 text-white`
+> - Columns: CardCode (mono), CardName, Type (badge), Ledger Balance (mono), Credit Limit (mono), Status
+> - Alert logic: `Balance > CreditLimit` → row tint `bg-red-950/30`; Status col = Alert icon (lucide-react, bright red)
+> - Page header: "Business Partner Directory"
+
+**Commits:**
+- `feat: build business partner directory grid with search`
+- `feat: add Customer/Vendor CardType filter chips`
+- `feat: add credit limit exceeded conditional row flagging`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `app/business-partners/page.tsx` | **NEW** | Page container + action bar |
+| `components/partners/partner-table.tsx` | **NEW** | Interactive table with filter chips, conditional row flagging, CardType badges |
+| `components/ui/data-table.tsx` | **NEW** | Shared reusable table base component |
+
+---
+
+## Phase 8: Supply Chain Inventory Watchdog (`OITM`)
+
+**Branch:** `feature/inventory-watchdog`
+
+**Visual Target:** [Supply Chain Inventory Watchdog](C:\Users\jk435\.gemini\antigravity-ide\brain\5f757d85-c6f3-4875-b034-dc1c0a4af65b\inventory.webp)
+
+**Stitch Prompt Used:**
+> Role: Expert Frontend Architect.
+> Task: Build `/inventory` watchdog page for tracking `OITM` data.
+> - Industrial monitoring screen — high contrast for alerts
+> - Stock quantities strictly `font-mono`
+> - Columns: ItemCode (mono), Description, OnHand (mono), IsCommited (mono), NetAvailable (mono), MinStock (mono), Health Status
+> - Progress bar: `NetAvailable` relative to predefined maximum
+> - Alert logic: `NetAvailable < MinStock` → `NetAvailable` cell `animate-pulse text-red-500` + "Restock Required" badge in Health Status
+> - Page header: "Supply Chain Inventory Watchdog"
+> - Subtitle: "Real-time OITM Stock & Commitment Tracking"
+
+**Commits:**
+- `feat: build inventory watchdog grid with NetAvailable computation`
+- `feat: add flashing red row alert for items below MinStock threshold`
+- `feat: add stock level progress bars per inventory item`
+
+**Files:**
+| File | Action | Notes |
+|------|--------|-------|
+| `app/inventory/page.tsx` | **NEW** | Page with header + subtitle |
+| `components/inventory/inventory-table.tsx` | **NEW** | Alert table with progress bars and pulse animation |
+
+---
+
+## Complete File Tree
+
+```text
+sap-b1-reporting-portal/
+├── app/
+│   ├── globals.css                       # Tailwind directives + Google Font imports
+│   ├── layout.tsx                        # Root layout with dark theme body
+│   ├── page.tsx                          # Root redirect (B1SESSION cookie check)
+│   ├── loading.tsx                       # Global App Router loading skeleton
+│   ├── error.tsx                         # Global App Router error boundary
+│   ├── not-found.tsx                     # Branded 404 page
+│   ├── login/
+│   │   └── page.tsx
+│   ├── dashboard/
+│   │   ├── page.tsx
+│   │   └── loading.tsx                   # Dashboard-level loading state
+│   ├── business-partners/
+│   │   ├── page.tsx
+│   │   └── loading.tsx
+│   ├── inventory/
+│   │   ├── page.tsx
+│   │   └── loading.tsx
+│   └── api/sap/
+│       ├── [...mock]/route.ts            # Catch-all GET + POST handlers
+│       ├── Login/route.ts
+│       └── Logout/route.ts
+├── components/
+│   ├── layout/
+│   │   ├── sidebar.tsx
+│   │   └── protected-layout.tsx
+│   ├── dashboard/
+│   │   ├── kpi-cards.tsx
+│   │   ├── revenue-chart.tsx
+│   │   └── partner-leaderboard.tsx
+│   ├── partners/
+│   │   └── partner-table.tsx
+│   ├── inventory/
+│   │   └── inventory-table.tsx
+│   └── ui/
+│       └── data-table.tsx
+├── lib/
+│   ├── sapClient.ts
+│   ├── auth.ts                           # Server-side getSession() helper
+│   └── odata-parser.ts
+├── types/
+│   └── sap.ts                           # RDR1Line: LineNum, ItemCode, Quantity, Price
+├── constants/
+│   └── mockTables.ts
+├── middleware.ts
+├── next.config.ts
+├── tsconfig.json                         # strict: true, noImplicitAny: true
+├── .env.local.example                    # SAP_MOCK_USER, SAP_MOCK_PASSWORD, SESSION_SECRET
+├── .gitignore
+├── package.json
+└── tailwind.config.ts
+```
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- `npx tsc --noEmit` — verify all SAP payload types strict, no implicit `any`
+- `npm run build` — confirm all App Router pages and route handlers compile
+
+### Manual Verification
+
+| Check | Expected Result |
+|-------|----------------|
+| Visit `/dashboard` without cookie | Redirected to `/login` |
+| Login → inspect cookies in DevTools | `B1SESSION` is `HttpOnly`, `SameSite=Strict` |
+| Click Logout | Cookie cleared, redirected to `/login` |
+| `GET /api/sap/Orders?$filter=DocumentStatus eq 'bost_Open'` | Returns only open orders |
+| `GET /api/sap/Items?$select=ItemCode,OnHand` | Returns only those two columns |
+| `GET /api/sap/Orders?$orderby=DocDate desc` | Orders sorted newest first |
+| `POST /api/sap/Orders` with valid body | Returns `201` with new order |
+| Business Partners page → click "Vendors" chip | Only `CardType: 'V'` rows shown |
+| Partner row where `Balance > CreditLimit` | Row tinted `bg-red-950/30`, red alert icon visible |
+| Inventory item where `NetAvailable < MinStock` | Cell pulses red, "Restock Required" badge shown |
